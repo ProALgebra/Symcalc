@@ -1,0 +1,13 @@
+[dependencies]
+
+[package]
+  cjc-version = "1.0.4"
+  compile-option = ""
+  description = "nothing here"
+  link-option = ""
+  name = "symcalc"
+  output-type = "executable"
+  src-dir = ""
+  target-dir = ""
+  version = "0.2.0"
+  package-configuration = {}

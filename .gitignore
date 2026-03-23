@@ -1,0 +1,19 @@
+# Cangjie / cjpm build artifacts
+/target/
+/.cache/
+
+# Logs and temporary outputs
+*.log
+*.errlog
+*.tmp
+*.temp
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Local IDE settings (optional to share; usually ignored)
+/.vscode/
