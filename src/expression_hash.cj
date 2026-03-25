@@ -25,19 +25,34 @@ extend<A> Expression_<A> <: Hashable where A <: Scalar<A> & Comparable<A> & Hash
             }
         }
 
-        func mulMod(a: Int64, b: Int64, m: Int64): Int64 {
-            var result: Int64 = 0
-            var x: Int64 = normalizeMod(a, m)
-            var y: Int64 = b
+        func mulMod31(a: Int64, m: Int64): Int64 {
+            let a2 = addMod(a, a, m)
+            let a4 = addMod(a2, a2, m)
+            let a8 = addMod(a4, a4, m)
+            let a16 = addMod(a8, a8, m)
+            addMod(addMod(addMod(addMod(a16, a8, m), a4, m), a2, m), a, m)
+        }
 
-            while(y > 0){
-                if(y % 2 == 1){
-                    result = addMod(result, x, m)
-                }
-                x = addMod(x, x, m)
-                y = y / 2
-            }
-            return result
+        func mulMod131(a: Int64, m: Int64): Int64 {
+            let a2 = addMod(a, a, m)
+            let a4 = addMod(a2, a2, m)
+            let a8 = addMod(a4, a4, m)
+            let a16 = addMod(a8, a8, m)
+            let a32 = addMod(a16, a16, m)
+            let a64 = addMod(a32, a32, m)
+            let a128 = addMod(a64, a64, m)
+            addMod(addMod(a128, a2, m), a, m)
+        }
+
+        func mulMod137(a: Int64, m: Int64): Int64 {
+            let a2 = addMod(a, a, m)
+            let a4 = addMod(a2, a2, m)
+            let a8 = addMod(a4, a4, m)
+            let a16 = addMod(a8, a8, m)
+            let a32 = addMod(a16, a16, m)
+            let a64 = addMod(a32, a32, m)
+            let a128 = addMod(a64, a64, m)
+            addMod(addMod(a128, a8, m), a, m)
         }
 
         func expressionKind(expr: Expression_<A>): Int {
@@ -72,93 +87,26 @@ extend<A> Expression_<A> <: Hashable where A <: Scalar<A> & Comparable<A> & Hash
         func compareMaps<V>(
             left: HashMap<Expression_<A>, V>,
             right: HashMap<Expression_<A>, V>
-        ): Ordering where V <: Comparable<V> {
-            let leftEntries = sortedEntries(left)
-            let rightEntries = sortedEntries(right)
-
-            let sizeState = leftEntries.size.compare(rightEntries.size)
+        ): Ordering where V <: Hashable {
+            let sizeState = left.size.compare(right.size)
             match (sizeState) {
                 case Ordering.EQ => ()
                 case _ => return sizeState
             }
-
-            var i: Int = 0
-            while (i < leftEntries.size) {
-                let leftEntry = leftEntries[i]
-                let rightEntry = rightEntries[i]
-
-                let keyState = compareExpression(leftEntry[0], rightEntry[0])
-                match (keyState) {
-                    case Ordering.EQ => ()
-                    case _ => return keyState
-                }
-
-                let valueState = leftEntry[1].compare(rightEntry[1])
-                match (valueState) {
-                    case Ordering.EQ => ()
-                    case _ => return valueState
-                }
-
-                i += 1
-            }
-
-            Ordering.EQ
+            createHashFromMap(left).compare(createHashFromMap(right))
         }
 
         func compareExpression(left: Expression_<A>, right: Expression_<A>): Ordering {
-            let leftKind = expressionKind(left)
-            let rightKind = expressionKind(right)
-            let kindState = leftKind.compare(rightKind)
-            match (kindState) {
-                case Ordering.EQ => ()
-                case _ => return kindState
-            }
-
-            match ((left, right)) {
-                case (Constant(a), Constant(b)) => a.compare(b)
-                case (Variable(a), Variable(b)) => a.compare(b)
-                case (Add(ac1, m1), Add(ac2, m2)) =>
-                    let constState = ac1.compare(ac2)
-                    match (constState) {
-                        case Ordering.EQ => compareMaps(m1, m2)
-                        case _ => constState
-                    }
-                case (Multiply(ac1, m1), Multiply(ac2, m2)) =>
-                    let constState = ac1.compare(ac2)
-                    match (constState) {
-                        case Ordering.EQ => compareMaps(m1, m2)
-                        case _ => constState
-                    }
-                case (Function(name1, vars1), Function(name2, vars2)) =>
-                    let nameState = name1.compare(name2)
-                    match (nameState) {
-                        case Ordering.EQ =>
-                            let sizeState = vars1.size.compare(vars2.size)
-                            match (sizeState) {
-                                case Ordering.EQ => ()
-                                case _ => return sizeState
-                            }
-                            var i: Int = 0
-                            while (i < vars1.size) {
-                                let argState = compareExpression(vars1[i], vars2[i])
-                                match (argState) {
-                                    case Ordering.EQ => ()
-                                    case _ => return argState
-                                }
-                                i += 1
-                            }
-                            Ordering.EQ
-                        case _ => nameState
-                    }
-                case _ => Ordering.EQ
-            }
+            left.hashCode().compare(right.hashCode())
         }
 
         func mapEntryHash<V>(key: Expression_<A>, value: V): Int64 where V <: Hashable {
             let m = hashModulus()
             var ans: Int64 = 17
-            ans = addMod(mulMod(ans, 131, m), key.hashCode(), m)
-            ans = addMod(mulMod(ans, 137, m), value.hashCode(), m)
+            let keyHash = key.hashCode()
+            let valueHash = value.hashCode()
+            ans = addMod(mulMod131(ans, m), keyHash, m)
+            ans = addMod(mulMod137(ans, m), valueHash, m)
             ans
         }
 
@@ -167,30 +115,31 @@ extend<A> Expression_<A> <: Hashable where A <: Scalar<A> & Comparable<A> & Hash
             let m = hashModulus()
             var sumHashes: Int64 = 0
             var xorHashes: Int64 = 0
-            var prodHashes: Int64 = 1
+            var weightedSum: Int64 = 0
             var count: Int64 = 0
 
             for ((k, v) in map) {
                 let entryHash = mapEntryHash(k, v)
                 sumHashes = addMod(sumHashes, entryHash, m)
                 xorHashes = xorHashes ^ entryHash
-                prodHashes = mulMod(prodHashes, addMod(entryHash, 1, m), m)
+                weightedSum = addMod(weightedSum, mulMod31(entryHash, m), m)
                 count += 1
             }
 
             var ans: Int64 = 0
             ans = addMod(ans, sumHashes, m)
-            ans = addMod(mulMod(ans, 31, m), normalizeMod(xorHashes, m), m)
-            ans = addMod(mulMod(ans, 31, m), prodHashes, m)
-            ans = addMod(mulMod(ans, 31, m), count, m)
+            ans = addMod(mulMod31(ans, m), normalizeMod(xorHashes, m), m)
+            ans = addMod(mulMod31(ans, m), weightedSum, m)
+            ans = addMod(mulMod31(ans, m), count, m)
             ans
         }
 
         func createHashFromVars(vars: ArrayList<Expression_<A>>): Int64 {
+            let m = hashModulus()
             var ans: Int64 = 0
             for(v in vars){
-                ans = mulMod(ans, 31, hashModulus())
-                ans = addMod(ans, v.hashCode(), hashModulus())
+                ans = mulMod31(ans, m)
+                ans = addMod(ans, v.hashCode(), m)
             }
             ans
         }
@@ -198,32 +147,44 @@ extend<A> Expression_<A> <: Hashable where A <: Scalar<A> & Comparable<A> & Hash
         public func hashCode(): Int64 {
             match (this) {
                 case Constant(n) =>
-                    addMod(mulMod(1, 31, hashModulus()), n.hashCode(), hashModulus())
+                    addMod(mulMod31(1, hashModulus()), n.hashCode(), hashModulus())
                 case Variable(a) =>
-                    addMod(mulMod(2, 31, hashModulus()), a.hashCode(), hashModulus())
+                    addMod(mulMod31(2, hashModulus()), a.hashCode(), hashModulus())
                 case Add(ac, avars) => 
                     var hash:Int64 = 3
-                    hash = addMod(mulMod(hash, 31, hashModulus()), ac.hashCode(), hashModulus())
                     hash = addMod(
-                        mulMod(hash, 31, hashModulus()),
+                        mulMod31(hash, hashModulus()),
+                        ac.hashCode(),
+                        hashModulus()
+                    )
+                    hash = addMod(
+                        mulMod31(hash, hashModulus()),
                         createHashFromMap(avars),
                         hashModulus()
                     )
                     hash
                 case Multiply(ac, avars) => 
                     var hash:Int64 = 4
-                    hash = addMod(mulMod(hash, 31, hashModulus()), ac.hashCode(), hashModulus())
                     hash = addMod(
-                        mulMod(hash, 31, hashModulus()),
+                        mulMod31(hash, hashModulus()),
+                        ac.hashCode(),
+                        hashModulus()
+                    )
+                    hash = addMod(
+                        mulMod31(hash, hashModulus()),
                         createHashFromMap(avars),
                         hashModulus()
                     )
                     hash
                 case Function(ac, avars) => 
                     var hash:Int64 = 5
-                    hash = addMod(mulMod(hash, 31, hashModulus()), ac.hashCode(), hashModulus())
                     hash = addMod(
-                        mulMod(hash, 31, hashModulus()),
+                        mulMod31(hash, hashModulus()),
+                        ac.hashCode(),
+                        hashModulus()
+                    )
+                    hash = addMod(
+                        mulMod31(hash, hashModulus()),
                         createHashFromVars(avars),
                         hashModulus()
                     )
