@@ -103,6 +103,4 @@ main() {
     let addEnd = MonoTime.now()
     println(hugeSum)
     println("bigint add time: ${addEnd - addStart}")
-
-    runNestedHashMapEqualRepro()
 }
