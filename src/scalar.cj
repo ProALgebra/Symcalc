@@ -32,13 +32,20 @@ extend Int64 <: Scalar<Int64> {
     public static func div(left: Int64, right: Int64): Int64 { left / right }
 
     public static func powInt(base: Int64, exp: Int): Int64 {
-        var ans: Int64 = 1
-        var i = 0
-        while (i < exp) {
-            ans *= base
-            i++
+        if (exp <= 0) {
+            return 1
         }
-        ans
+        var result: Int64 = 1
+        var currentBase = base
+        var currentExp = exp
+        while (currentExp > 0) {
+            if (currentExp % 2 == 1) {
+                result *= currentBase
+            }
+            currentBase *= currentBase
+            currentExp /= 2
+        }
+        result
     }
 }
 
@@ -54,13 +61,20 @@ extend Float64 <: Scalar<Float64> {
     public static func div(left: Float64, right: Float64): Float64 { left / right }
 
     public static func powInt(base: Float64, exp: Int): Float64 {
-        var ans: Float64 = 1.0
-        var i = 0
-        while (i < exp) {
-            ans *= base
-            i++
+        if (exp <= 0) {
+            return 1.0
         }
-        ans
+        var result: Float64 = 1.0
+        var currentBase = base
+        var currentExp = exp
+        while (currentExp > 0) {
+            if (currentExp % 2 == 1) {
+                result *= currentBase
+            }
+            currentBase *= currentBase
+            currentExp /= 2
+        }
+        result
     }
 }
 
@@ -76,12 +90,19 @@ extend BigInt <: Scalar<BigInt> {
     public static func div(left: BigInt, right: BigInt): BigInt { left / right }
 
     public static func powInt(base: BigInt, exp: Int): BigInt {
-        var ans = BigInt(1)
-        var i = 0
-        while (i < exp) {
-            ans *= base
-            i++
+        if (exp <= 0) {
+            return BigInt(1)
         }
-        ans
+        var result = BigInt(1)
+        var currentBase = base
+        var currentExp = exp
+        while (currentExp > 0) {
+            if (currentExp % 2 == 1) {
+                result *= currentBase
+            }
+            currentBase *= currentBase
+            currentExp /= 2
+        }
+        result
     }
 }

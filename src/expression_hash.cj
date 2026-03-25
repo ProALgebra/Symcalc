@@ -154,17 +154,35 @@ extend<A> Expression_<A> <: Hashable where A <: Scalar<A> & Comparable<A> & Hash
             }
         }
 
-        func createHashFromMap<V>(map: HashMap<Expression_<A>, V>): Int64
-            where V <: Hashable & Comparable<V> {
-            let arrayMap = sortedEntries(map)
-            var ans: Int64 = 0
-            for((k,v) in arrayMap){
-                ans = mulMod(ans, 31, hashModulus())
-                ans = addMod(ans, k.hashCode(), hashModulus())
-                ans = mulMod(ans, 31, hashModulus())
-                ans = addMod(ans, v.hashCode(), hashModulus())
+        func mapEntryHash<V>(key: Expression_<A>, value: V): Int64 where V <: Hashable {
+            let m = hashModulus()
+            var ans: Int64 = 17
+            ans = addMod(mulMod(ans, 131, m), key.hashCode(), m)
+            ans = addMod(mulMod(ans, 137, m), value.hashCode(), m)
+            ans
+        }
+
+        // Order-independent map hash for commutative expression terms.
+        func createHashFromMap<V>(map: HashMap<Expression_<A>, V>): Int64 where V <: Hashable {
+            let m = hashModulus()
+            var sumHashes: Int64 = 0
+            var xorHashes: Int64 = 0
+            var prodHashes: Int64 = 1
+            var count: Int64 = 0
+
+            for ((k, v) in map) {
+                let entryHash = mapEntryHash(k, v)
+                sumHashes = addMod(sumHashes, entryHash, m)
+                xorHashes = xorHashes ^ entryHash
+                prodHashes = mulMod(prodHashes, addMod(entryHash, 1, m), m)
+                count += 1
             }
 
+            var ans: Int64 = 0
+            ans = addMod(ans, sumHashes, m)
+            ans = addMod(mulMod(ans, 31, m), normalizeMod(xorHashes, m), m)
+            ans = addMod(mulMod(ans, 31, m), prodHashes, m)
+            ans = addMod(mulMod(ans, 31, m), count, m)
             ans
         }
 
