@@ -56,8 +56,9 @@ main() {
     
     let start = MonoTime.now()
     expression2 = buildDeep(61)
-    println(core.simplifyExpression(expression2))
+    expression2 = core.simplifyExpression(expression2)
     let end = MonoTime.now()
+    println(expression2)
     let duration = end - start
     println("Time (ms): ${duration}")
     

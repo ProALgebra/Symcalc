@@ -38,3 +38,24 @@ extend Int64 <: Scalar<Int64> {
         ans
     }
 }
+
+extend Float64 <: Scalar<Float64> {
+    public static func eq(left: Float64, right: Float64): Bool { left == right }
+
+    public static func zero(): Float64 { 0.0 }
+    public static func one(): Float64 { 1.0 }
+    public static func fromInt(n: Int): Float64 { Float64(n) }
+
+    public static func add(left: Float64, right: Float64): Float64 { left + right }
+    public static func mul(left: Float64, right: Float64): Float64 { left * right }
+
+    public static func powInt(base: Float64, exp: Int): Float64 {
+        var ans: Float64 = 1.0
+        var i = 0
+        while (i < exp) {
+            ans *= base
+            i++
+        }
+        ans
+    }
+}

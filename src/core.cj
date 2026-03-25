@@ -26,6 +26,22 @@ class Core<A> where A <: Scalar<A> & Comparable<A> & Hashable & ToString & Equat
         normalizedExpr.derivativeWithRules(this.functionRules, element).toNormalForm()
     }
 
+    public func substituteVariable(
+        expr: Expression_<A>,
+        variableName: String,
+        replacement: Expression_<A>
+    ): Expression_<A> {
+        expr.substituteVariable(variableName, replacement).toNormalForm()
+    }
+
+    public func substituteVariable(
+        expr: Expression_<A>,
+        variable: Expression_<A>,
+        replacement: Expression_<A>
+    ): Expression_<A> {
+        expr.substituteVariable(variable, replacement).toNormalForm()
+    }
+
     func simplifyNode(expr: Expression_<A>): Expression_<A> {
         match (expr) {
             case Function(functionName, args) =>
