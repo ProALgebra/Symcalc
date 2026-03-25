@@ -1,4 +1,5 @@
 package symcalc
+import std.math.numeric.BigInt
 
 public interface Scalar<T> {
     public static func eq(left: T, right: T): Bool
@@ -54,6 +55,28 @@ extend Float64 <: Scalar<Float64> {
 
     public static func powInt(base: Float64, exp: Int): Float64 {
         var ans: Float64 = 1.0
+        var i = 0
+        while (i < exp) {
+            ans *= base
+            i++
+        }
+        ans
+    }
+}
+
+extend BigInt <: Scalar<BigInt> {
+    public static func eq(left: BigInt, right: BigInt): Bool { left == right }
+
+    public static func zero(): BigInt { BigInt(0) }
+    public static func one(): BigInt { BigInt(1) }
+    public static func fromInt(n: Int): BigInt { BigInt(n) }
+
+    public static func add(left: BigInt, right: BigInt): BigInt { left + right }
+    public static func mul(left: BigInt, right: BigInt): BigInt { left * right }
+    public static func div(left: BigInt, right: BigInt): BigInt { left / right }
+
+    public static func powInt(base: BigInt, exp: Int): BigInt {
+        var ans = BigInt(1)
         var i = 0
         while (i < exp) {
             ans *= base

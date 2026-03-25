@@ -1,11 +1,14 @@
 package symcalc
 import std.collection.*
+import std.math.numeric.BigInt
+import std.time.*
 
 main() {
     let testsPassed = runRegressionTests()
     println("tests passed: ${testsPassed}")
 
     let intCore = Core<Int64>()
+    let bigIntCore = Core<BigInt>()
     let floatCore = Core<Float64>()
 
     let iterator = Variable<Int64>("i")
@@ -60,4 +63,46 @@ main() {
     println("cos(3.1415) expr: ${cosConst}")
     println("cos(3.1415) simplified: ${floatCore.simplifyExpression(cosConst)}")
     println("sin(x) simplified: ${floatCore.simplifyExpression(sinSymbolic)}")
+
+    let benchX = Variable<BigInt>("x")
+    func buildDeep(n: Int64): Expression_<BigInt> {
+        var expr: Expression_<BigInt> = benchX
+        for (_ in 0..n) {
+            expr = Add<BigInt>(
+                BigInt(1),
+                HashMap<Expression_<BigInt>, BigInt>(
+                    (expr, BigInt(2)),
+                    (Multiply(BigInt(1), HashMap<Expression_<BigInt>, BigInt>((benchX, BigInt(2)))), BigInt(3))
+                )
+            )
+        }
+        return expr
+    }
+
+    let start = MonoTime.now()
+    var deepExpr = buildDeep(1000)
+    deepExpr = bigIntCore.simplifyExpression(deepExpr)
+    let end = MonoTime.now()
+    let duration = end - start
+    println("deep simplify result: ${deepExpr}")
+    println("time test duration: ${duration}")
+
+    let bigInt1 = BigInt(-3)
+    let bitLen1 = bigInt1.bitLen
+    println(bitLen1)
+
+    let bigInt2 = BigInt(-1)
+    let bitLen2 = bigInt2.bitLen
+    println(bitLen2)
+
+    let bigInt3 = BigInt(0)
+    let bitLen3 = bigInt3.bitLen
+    println(bitLen3)
+
+    let huge = BigInt.powInt(BigInt(2), 1000) - BigInt(1)
+    let addStart = MonoTime.now()
+    let hugeSum = huge + huge
+    let addEnd = MonoTime.now()
+    println(hugeSum)
+    println("bigint add time: ${addEnd - addStart}")
 }
