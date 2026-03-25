@@ -174,38 +174,48 @@ extend<A> Expression_<A> where A <: Scalar<A> & Comparable<A> {
                             case Multiply(multConstantPart,multTerms) => 
                                 var normalizedMult: Expression_<A> =
                                     Multiply(multConstantPart, multTerms).toNormalForm()
-
-                                if(multTerms.isEmpty()){
-                                    normalizedConstantPart = A.add(
-                                        normalizedConstantPart,
-                                        multConstantPart
-                                    )
-                                    continue
-                                }
-                                if(multTerms.size == 1){
-                                    for((t,v) in multTerms){
-                                        if(A.eq(v, A.one())){
-                                            match(t){
-                                                case Variable(_) =>
-                                                    normalizedMult = Add(
-                                                        A.zero(),
-                                                        HashMap<Expression_<A>, A>((t, multConstantPart))
-                                                    )
-                                                case a => a
+                                match (normalizedMult) {
+                                    case Constant(value) =>
+                                        normalizedConstantPart = A.add(
+                                            normalizedConstantPart,
+                                            A.mul(value, coefficient)
+                                        )
+                                    case Multiply(normConst, normTerms) =>
+                                        if (normTerms.isEmpty()) {
+                                            normalizedConstantPart = A.add(
+                                                normalizedConstantPart,
+                                                A.mul(normConst, coefficient)
+                                            )
+                                        } else {
+                                            let canonicalTerm = Multiply(A.one(), normTerms)
+                                            let delta = A.mul(normConst, coefficient)
+                                            match (normalizedTerms.get(canonicalTerm)) {
+                                                case Some(existingCoefficient) => 
+                                                    let updated = A.add(delta, existingCoefficient)
+                                                    if(A.isZero(updated)){
+                                                        normalizedTerms.remove(canonicalTerm)
+                                                    }
+                                                    else{
+                                                        normalizedTerms.add(canonicalTerm, updated)
+                                                    }
+                                                case None =>
+                                                    if (!A.isZero(delta)) {
+                                                        normalizedTerms.add(canonicalTerm, delta)
+                                                    }
                                             }
                                         }
-                                    }
-                                }
-                                match (normalizedTerms.get(normalizedMult)) {
-                                    case Some(existingCoefficient) => 
-                                        let updated = A.add(coefficient, existingCoefficient)
-                                        if(A.isZero(updated)){
-                                            normalizedTerms.remove(normalizedMult)
+                                    case _ =>
+                                        match (normalizedTerms.get(normalizedMult)) {
+                                            case Some(existingCoefficient) => 
+                                                let updated = A.add(coefficient, existingCoefficient)
+                                                if(A.isZero(updated)){
+                                                    normalizedTerms.remove(normalizedMult)
+                                                }
+                                                else{
+                                                    normalizedTerms.add(normalizedMult, updated)
+                                                }
+                                            case None => normalizedTerms.add(normalizedMult,coefficient)
                                         }
-                                        else{
-                                            normalizedTerms.add(normalizedMult, updated)
-                                        }
-                                    case None => normalizedTerms.add(normalizedMult,coefficient)
                                 }
                             case a =>
                                 match (normalizedTerms.get(term)) {

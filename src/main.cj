@@ -67,20 +67,18 @@ main() {
     let benchX = Variable<BigInt>("x")
     func buildDeep(n: Int64): Expression_<BigInt> {
         var expr: Expression_<BigInt> = benchX
+        let one = Constant(BigInt(1))
+        let two = Constant(BigInt(2))
+        let x2Term = Multiply(BigInt(3), HashMap<Expression_<BigInt>, BigInt>((benchX, BigInt(2))))
+        
         for (_ in 0..n) {
-            expr = Add<BigInt>(
-                BigInt(1),
-                HashMap<Expression_<BigInt>, BigInt>(
-                    (expr, BigInt(2)),
-                    (Multiply(BigInt(1), HashMap<Expression_<BigInt>, BigInt>((benchX, BigInt(2)))), BigInt(3))
-                )
-            )
+            expr = one + (two * expr) + x2Term
         }
         return expr
     }
 
     let start = MonoTime.now()
-    var deepExpr = buildDeep(1000)
+    var deepExpr = buildDeep(10000)
     deepExpr = bigIntCore.simplifyExpression(deepExpr)
     let end = MonoTime.now()
     let duration = end - start
@@ -105,4 +103,6 @@ main() {
     let addEnd = MonoTime.now()
     println(hugeSum)
     println("bigint add time: ${addEnd - addStart}")
+
+    runNestedHashMapEqualRepro()
 }
