@@ -9,6 +9,7 @@ public interface Scalar<T> {
 
     public static func add(left: T, right: T): T
     public static func mul(left: T, right: T): T
+    public static func div(left: T, right: T): T
     public static func powInt(base: T, exp: Int): T
     
     public static func isZero(value: T): Bool {
@@ -27,6 +28,7 @@ extend Int64 <: Scalar<Int64> {
 
     public static func add(left: Int64, right: Int64): Int64 { left + right }
     public static func mul(left: Int64, right: Int64): Int64 { left * right }
+    public static func div(left: Int64, right: Int64): Int64 { left / right }
 
     public static func powInt(base: Int64, exp: Int): Int64 {
         var ans: Int64 = 1
@@ -48,6 +50,7 @@ extend Float64 <: Scalar<Float64> {
 
     public static func add(left: Float64, right: Float64): Float64 { left + right }
     public static func mul(left: Float64, right: Float64): Float64 { left * right }
+    public static func div(left: Float64, right: Float64): Float64 { left / right }
 
     public static func powInt(base: Float64, exp: Int): Float64 {
         var ans: Float64 = 1.0

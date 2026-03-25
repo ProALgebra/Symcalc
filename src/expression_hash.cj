@@ -3,16 +3,38 @@ import std.collection.*
 import std.sort.*
 
 extend<A> Expression_<A> <: Hashable where A <: Scalar<A> & Comparable<A> & Hashable {
+        func hashModulus(): Int64 {
+            618970019642690137
+        }
+
+        func normalizeMod(value: Int64, m: Int64): Int64 {
+            var v = value % m
+            if (v < 0) {
+                v += m
+            }
+            v
+        }
+
+        func addMod(a: Int64, b: Int64, m: Int64): Int64 {
+            let x = normalizeMod(a, m)
+            let y = normalizeMod(b, m)
+            if (x >= m - y) {
+                x - (m - y)
+            } else {
+                x + y
+            }
+        }
+
         func mulMod(a: Int64, b: Int64, m: Int64): Int64 {
             var result: Int64 = 0
-            var x: Int64 = a % m
+            var x: Int64 = normalizeMod(a, m)
             var y: Int64 = b
 
             while(y > 0){
                 if(y % 2 == 1){
-                    result = (result + x) % m
+                    result = addMod(result, x, m)
                 }
-                x = (x * 2) % m
+                x = addMod(x, x, m)
                 y = y / 2
             }
             return result
@@ -137,14 +159,10 @@ extend<A> Expression_<A> <: Hashable where A <: Scalar<A> & Comparable<A> & Hash
             let arrayMap = sortedEntries(map)
             var ans: Int64 = 0
             for((k,v) in arrayMap){
-                ans = mulMod(ans, 31, 618970019642690137)
-                ans = ans % 618970019642690137  
-                ans += k.hashCode()
-                ans = ans % 618970019642690137  
-                ans = mulMod(ans, 31, 618970019642690137)
-                ans = ans % 618970019642690137  
-                ans += v.hashCode()
-                ans = ans % 618970019642690137  
+                ans = mulMod(ans, 31, hashModulus())
+                ans = addMod(ans, k.hashCode(), hashModulus())
+                ans = mulMod(ans, 31, hashModulus())
+                ans = addMod(ans, v.hashCode(), hashModulus())
             }
 
             ans
@@ -153,44 +171,44 @@ extend<A> Expression_<A> <: Hashable where A <: Scalar<A> & Comparable<A> & Hash
         func createHashFromVars(vars: ArrayList<Expression_<A>>): Int64 {
             var ans: Int64 = 0
             for(v in vars){
-                ans = mulMod(ans, 31, 618970019642690137)
-                ans = ans % 618970019642690137
-                ans += v.hashCode()
-                ans = ans % 618970019642690137
+                ans = mulMod(ans, 31, hashModulus())
+                ans = addMod(ans, v.hashCode(), hashModulus())
             }
             ans
         }
 
         public func hashCode(): Int64 {
             match (this) {
-                case Constant(n) => 1 * 31 + n.hashCode()
-                case Variable(a) => 2 * 31 + a.hashCode()
+                case Constant(n) =>
+                    addMod(mulMod(1, 31, hashModulus()), n.hashCode(), hashModulus())
+                case Variable(a) =>
+                    addMod(mulMod(2, 31, hashModulus()), a.hashCode(), hashModulus())
                 case Add(ac, avars) => 
                     var hash:Int64 = 3
-                    hash = 
-                        mulMod(hash, 31, 618970019642690137) + ac.hashCode()
-                    hash = hash % 618970019642690137  
-                    hash = 
-                        mulMod(hash, 31, 618970019642690137) + createHashFromMap(avars)
-                    hash = hash % 618970019642690137  
+                    hash = addMod(mulMod(hash, 31, hashModulus()), ac.hashCode(), hashModulus())
+                    hash = addMod(
+                        mulMod(hash, 31, hashModulus()),
+                        createHashFromMap(avars),
+                        hashModulus()
+                    )
                     hash
                 case Multiply(ac, avars) => 
                     var hash:Int64 = 4
-                    hash = 
-                        mulMod(hash, 31, 618970019642690137) + ac.hashCode()
-                    hash = hash % 618970019642690137  
-                    hash = 
-                        mulMod(hash, 31, 618970019642690137) + createHashFromMap(avars)
-                    hash = hash % 618970019642690137  
+                    hash = addMod(mulMod(hash, 31, hashModulus()), ac.hashCode(), hashModulus())
+                    hash = addMod(
+                        mulMod(hash, 31, hashModulus()),
+                        createHashFromMap(avars),
+                        hashModulus()
+                    )
                     hash
                 case Function(ac, avars) => 
                     var hash:Int64 = 5
-                    hash = 
-                        mulMod(hash, 31, 618970019642690137) + ac.hashCode()
-                    hash = hash % 618970019642690137  
-                    hash = 
-                        mulMod(hash, 31, 618970019642690137) + createHashFromVars(avars)
-                    hash = hash % 618970019642690137  
+                    hash = addMod(mulMod(hash, 31, hashModulus()), ac.hashCode(), hashModulus())
+                    hash = addMod(
+                        mulMod(hash, 31, hashModulus()),
+                        createHashFromVars(avars),
+                        hashModulus()
+                    )
                     hash
             }
     }

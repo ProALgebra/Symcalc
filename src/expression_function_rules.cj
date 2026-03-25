@@ -12,6 +12,8 @@ class FunctionRules<A> where A <: Scalar<A> & Comparable<A> & Hashable & ToStrin
         if (initialized) {
             return
         }
+        let trigonometricRules = TrigonometricRules<A>()
+        let geometricRules = GeometricRules<A>()
 
         this.registerSimplifyRule("id", { args =>
             if (args.size == 1) {
@@ -30,6 +32,26 @@ class FunctionRules<A> where A <: Scalar<A> & Comparable<A> & Hashable & ToStrin
             } else {
                 Function("neg", args)
             }
+        })
+
+        this.registerSimplifyRule("sin", { args =>
+            trigonometricRules.simplifySin(args)
+        })
+
+        this.registerSimplifyRule("cos", { args =>
+            trigonometricRules.simplifyCos(args)
+        })
+
+        this.registerSimplifyRule("partial_sum", { args =>
+            PartialSumRules<A>().simplifyPartialSum(args)
+        })
+
+        this.registerSimplifyRule("pow", { args =>
+            geometricRules.simplifyPow(args)
+        })
+
+        this.registerSimplifyRule("geom_sum", { args =>
+            geometricRules.simplifyGeomSum(args)
         })
 
         this.registerDerivativeRule("id", { args, variable =>
@@ -52,28 +74,11 @@ class FunctionRules<A> where A <: Scalar<A> & Comparable<A> & Hashable & ToStrin
         })
 
         this.registerDerivativeRule("sin", { args, variable =>
-            if (args.size == 1) {
-                let u = args[0]
-                let du = u.derivative(variable)
-                (Function("cos", ArrayList<Expression_<A>>([u])) * du).toNormalForm()
-            } else {
-                Add(A.zero(), HashMap<Expression_<A>, A>())
-            }
+            trigonometricRules.derivativeSin(args, variable)
         })
 
         this.registerDerivativeRule("cos", { args, variable =>
-            if (args.size == 1) {
-                let u = args[0]
-                let du = u.derivative(variable)
-                (
-                    Multiply(
-                        A.fromInt(-1),
-                        HashMap<Expression_<A>, A>((Function("sin", ArrayList<Expression_<A>>([u])), A.one()))
-                    ) * du
-                ).toNormalForm()
-            } else {
-                Add(A.zero(), HashMap<Expression_<A>, A>())
-            }
+            trigonometricRules.derivativeCos(args, variable)
         })
 
         this.registerDerivativeRule("exp", { args, variable =>

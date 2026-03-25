@@ -1,68 +1,63 @@
 package symcalc
 import std.collection.*
-import std.time.*
-
-
 
 main() {
-    let core = Core<Int>()
-   /*println(11 % 10)
-    let x = (Add(1,HashMap<Expression_<Int>,Int>((Multiply(1, HashMap<Expression_<Int>,Int>((Variable("x"),2))), 1),(Multiply(2, HashMap<Expression_<Int>,Int>()), 1))))
-    let y = (Add(1,HashMap<Expression_<Int>,Int>((Multiply(2, HashMap<Expression_<Int>,Int>()), 1),(Multiply(1, HashMap<Expression_<Int>,Int>((Variable("x"),3))), 1))))
-    println(x.toString())
-    println(x.hashCode())
-    println(y.toString())
-    println(y.hashCode())
-    let z = HashMap<Expression_<Int>,Int>((Variable("x"),2))
-    z.add(Variable("x"),3)
-    println(z.toString())*/
-    let expression = (
-        Add(1,
-            HashMap<Expression_<Int>,Int>(
-                (Multiply(1, HashMap<Expression_<Int>,Int>()), 1),
-                (Multiply(2, HashMap<Expression_<Int>,Int>((Variable("x"),3))), 1),
-                (Add(2, HashMap<Expression_<Int>,Int>(
-                    (Variable("x"),3),
-                    (Add(2, HashMap<Expression_<Int>,Int>((Variable("x"),3))), 2)
-                    
-                    )), 1)
-            )
-            
-        )
+    let testsPassed = runRegressionTests()
+    println("tests passed: ${testsPassed}")
+
+    let intCore = Core<Int64>()
+    let floatCore = Core<Float64>()
+
+    let iterator = Variable<Int64>("i")
+    let partialSumExpr = Function<Int64>(
+        "partial_sum",
+        ArrayList<Expression_<Int64>>([
+            Add(2, HashMap<Expression_<Int64>, Int64>((iterator, 1),)),
+            iterator,
+            Constant(1),
+            Constant(4)
+        ])
     )
-    //println(core.simplifyExpression(expression).toString())
-    //println(expression.hashCode())
-    var expression2 = expression
-        // expression + core.simplifyExpression(expression) + Add(0,HashMap<Expression_<Int>,Int>((Variable("x"),3)))+ Constant(1) + Variable("x") + Variable("x") + Multiply(1, HashMap<Expression_<Int>,Int>()) + Multiply(1, HashMap<Expression_<Int>,Int>())
-    //)
-    expression2 =
-        Variable<Int>("y") +
-        Multiply(2, HashMap<Expression_<Int>,Int>((Multiply(1,HashMap<Expression_<Int>,Int>((Variable("x"),2))),1),))
-    let x = Variable<Int>("x")
+    println("partial_sum expr: ${partialSumExpr}")
+    println("partial_sum simplified: ${intCore.simplifyExpression(partialSumExpr)}")
 
-    func buildDeep(n: Int): Expression_<Int> {
-        var expr: Expression_<Int> = x
+    let geometricViaPartial = Function<Float64>(
+        "partial_sum",
+        ArrayList<Expression_<Float64>>([
+            Multiply(
+                2.0,
+                HashMap<Expression_<Float64>, Float64>((
+                    Function(
+                        "pow",
+                        ArrayList<Expression_<Float64>>([Constant(3.0), Variable<Float64>("i")])
+                    ),
+                    1.0
+                ),)
+            ),
+            Variable<Float64>("i"),
+            Constant(0.0),
+            Constant(4.0)
+        ])
+    )
+    let geometricDirect = Function<Float64>(
+        "geom_sum",
+        ArrayList<Expression_<Float64>>([
+            Constant(2.0),
+            Constant(3.0),
+            Constant(0.0),
+            Constant(4.0)
+        ])
+    )
+    println("geom via partial_sum: ${floatCore.simplifyExpression(geometricViaPartial)}")
+    println("geom via geom_sum: ${floatCore.simplifyExpression(geometricDirect)}")
 
-        for(i in 0..n) {
-            expr = Add(1, HashMap<Expression_<Int>,Int>(
-                (expr, 2),
-                (Multiply(1, HashMap<Expression_<Int>,Int>((x,2))), 3)
-            ))
-        }
+    let sinConst = Function<Float64>("sin", ArrayList<Expression_<Float64>>([Constant(1.0)]))
+    let cosConst = Function<Float64>("cos", ArrayList<Expression_<Float64>>([Constant(3.1415)]))
+    let sinSymbolic = Function<Float64>("sin", ArrayList<Expression_<Float64>>([Variable("x")]))
 
-        return expr
-    }
-    println(core.derivativeExpression(expression2, Variable("x")))
-    
-    let start = MonoTime.now()
-    expression2 = buildDeep(61)
-    expression2 = core.simplifyExpression(expression2)
-    let end = MonoTime.now()
-    println(expression2)
-    let duration = end - start
-    println("Time (ms): ${duration}")
-    
- 
-
-
+    println("sin(1) expr: ${sinConst}")
+    println("sin(1) simplified: ${floatCore.simplifyExpression(sinConst)}")
+    println("cos(3.1415) expr: ${cosConst}")
+    println("cos(3.1415) simplified: ${floatCore.simplifyExpression(cosConst)}")
+    println("sin(x) simplified: ${floatCore.simplifyExpression(sinSymbolic)}")
 }

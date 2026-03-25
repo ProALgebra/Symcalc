@@ -1,7 +1,7 @@
 # Cangjie / cjpm build artifacts
 /target/
 /.cache/
-
+/.latex-styles/
 # Logs and temporary outputs
 *.log
 *.errlog
