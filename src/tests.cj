@@ -325,6 +325,39 @@ public func runRegressionTests(): Bool {
         sinSymbolicActual,
         sinSymbolicExpected
     )
+    let pi = Function<Float64>("pi", ArrayList<Expression_<Float64>>([]))
+    let twoPi = Multiply(
+        2.0,
+        HashMap<Expression_<Float64>, Float64>((pi, 1.0),)
+    )
+    allPassed = allPassed && assertExprEqualFloat64(
+        "sin(pi)=0",
+        floatCore.simplifyExpression(
+            Function<Float64>("sin", ArrayList<Expression_<Float64>>([pi]))
+        ),
+        Constant(0.0)
+    )
+    allPassed = allPassed && assertExprEqualFloat64(
+        "sin(2*pi)=0",
+        floatCore.simplifyExpression(
+            Function<Float64>("sin", ArrayList<Expression_<Float64>>([twoPi]))
+        ),
+        Constant(0.0)
+    )
+    allPassed = allPassed && assertExprEqualFloat64(
+        "cos(pi)=-1",
+        floatCore.simplifyExpression(
+            Function<Float64>("cos", ArrayList<Expression_<Float64>>([pi]))
+        ),
+        Constant(-1.0)
+    )
+    allPassed = allPassed && assertExprEqualFloat64(
+        "cos(2*pi)=1",
+        floatCore.simplifyExpression(
+            Function<Float64>("cos", ArrayList<Expression_<Float64>>([twoPi]))
+        ),
+        Constant(1.0)
+    )
 
     let x = Variable<Float64>("x")
     let sinX = Function<Float64>("sin", ArrayList<Expression_<Float64>>([x]))

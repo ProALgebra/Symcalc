@@ -254,7 +254,27 @@ extend<A> Expression_<A> where A <: Scalar<A> & Comparable<A> {
                         }
 
                     }
-                    expr = Add(normalizedConstantPart,normalizedTerms)
+                    if (normalizedTerms.isEmpty()) {
+                        expr = Constant(normalizedConstantPart)
+                        addChanged = true
+                    } else if (
+                        normalizedConstantPart.compare(A.zero()) == Ordering.EQ &&
+                        normalizedTerms.size == 1
+                    ) {
+                        for ((singleTerm, singleCoefficient) in normalizedTerms) {
+                            if (singleCoefficient.compare(A.one()) == Ordering.EQ) {
+                                expr = singleTerm
+                            } else {
+                                expr = Multiply(
+                                    singleCoefficient,
+                                    HashMap<Expression_<A>, A>((singleTerm, A.one()))
+                                ).toNormalForm()
+                            }
+                        }
+                        addChanged = true
+                    } else {
+                        expr = Add(normalizedConstantPart,normalizedTerms)
+                    }
                     changedInPass = addChanged
                     
                 //it can be better

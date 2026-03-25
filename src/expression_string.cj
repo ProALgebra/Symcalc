@@ -11,7 +11,17 @@ extend<A> Expression_<A> <: ToString where A <: ToString {
             case Multiply(constantPart, terms) =>
                 "Multiply(constant=${constantPart}, terms=${terms})"
             case Function(functionName, args) =>
-                "Function(name=${functionName}, args=${args})"
+                var argsString = "["
+                var first = true
+                for (arg in args) {
+                    if (!first) {
+                        argsString += ", "
+                    }
+                    argsString += "${arg}"
+                    first = false
+                }
+                argsString += "]"
+                "Function(name=${functionName}, args=${argsString})"
         }
     }
 }

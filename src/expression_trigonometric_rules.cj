@@ -2,6 +2,63 @@ package symcalc
 import std.collection.*
 
 class TrigonometricRules<A> where A <: Scalar<A> & Comparable<A> & Hashable & ToString & Equatable<A> {
+    func tryExactInt(value: A, maxAbs: Int): Option<Int> {
+        let zero = A.zero()
+        let one = A.one()
+        var absValue = value
+        var isNegative = false
+        if (absValue.compare(zero) == Ordering.LT) {
+            absValue = A.mul(A.fromInt(-1), absValue)
+            isNegative = true
+        }
+
+        var current = zero
+        var n = 0
+        while (current.compare(absValue) == Ordering.LT && n < maxAbs) {
+            current = A.add(current, one)
+            n += 1
+        }
+
+        if (current.compare(absValue) == Ordering.EQ) {
+            if (isNegative) {
+                return Some(-n)
+            }
+            return Some(n)
+        }
+        None
+    }
+
+    func extractPiMultiplier(arg: Expression_<A>): Option<Int> {
+        let normalizedArg = arg.toNormalForm()
+        match (normalizedArg) {
+            case Function(functionName, functionArgs) =>
+                if (functionName == "pi" && functionArgs.isEmpty()) {
+                    Some(1)
+                } else {
+                    None
+                }
+            case Multiply(constantPart, terms) =>
+                if (terms.size != 1) {
+                    return None
+                }
+                for ((term, coefficient) in terms) {
+                    match (term) {
+                        case Function(functionName, functionArgs) =>
+                            if (
+                                functionName == "pi" &&
+                                functionArgs.isEmpty() &&
+                                coefficient.compare(A.one()) == Ordering.EQ
+                            ) {
+                                return this.tryExactInt(constantPart, 100000)
+                            }
+                        case _ => return None
+                    }
+                }
+                None
+            case _ => None
+        }
+    }
+
     func factorialAsScalar(n: Int): A {
         var result = A.one()
         var i = 2
@@ -47,6 +104,10 @@ class TrigonometricRules<A> where A <: Scalar<A> & Comparable<A> & Hashable & To
     public func simplifySin(args: ArrayList<Expression_<A>>): Expression_<A> {
         if (args.size == 1) {
             let x = args[0].toNormalForm()
+            match (this.extractPiMultiplier(x)) {
+                case Some(_) => return Constant(A.zero())
+                case None => 0
+            }
             match (x) {
                 case Constant(value) => Constant(this.taylorSin(value, 12))
                 case _ => Function("sin", ArrayList<Expression_<A>>([x]))
@@ -59,6 +120,14 @@ class TrigonometricRules<A> where A <: Scalar<A> & Comparable<A> & Hashable & To
     public func simplifyCos(args: ArrayList<Expression_<A>>): Expression_<A> {
         if (args.size == 1) {
             let x = args[0].toNormalForm()
+            match (this.extractPiMultiplier(x)) {
+                case Some(multiplier) =>
+                    if (multiplier % 2 == 0) {
+                        return Constant(A.one())
+                    }
+                    return Constant(A.fromInt(-1))
+                case None => 0
+            }
             match (x) {
                 case Constant(value) => Constant(this.taylorCos(value, 12))
                 case _ => Function("cos", ArrayList<Expression_<A>>([x]))
