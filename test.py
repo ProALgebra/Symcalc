@@ -22,7 +22,7 @@ def build_deep(n):
 
 # Замер времени упрощения
 start = time.perf_counter()
-expr = build_deep(61)
+expr = build_deep(1000)
 simplified = sp.simplify(expr)
 end = time.perf_counter()
 

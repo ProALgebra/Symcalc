@@ -1,108 +1,99 @@
 package symcalc
 import std.collection.*
-import std.math.numeric.BigInt
-import std.time.*
 
-main() {
-    let testsPassed = runRegressionTests()
-    println("tests passed: ${testsPassed}")
 
-    let intCore = Core<Int64>()
-    let bigIntCore = Core<BigInt>()
-    let floatCore = Core<Float64>()
 
-    let iterator = Variable<Int64>("i")
-    let partialSumExpr = Function<Int64>(
-        "partial_sum",
-        ArrayList<Expression_<Int64>>([
-            Add(2, HashMap<Expression_<Int64>, Int64>((iterator, 1),)),
-            iterator,
-            Constant(1),
-            Constant(4)
-        ])
-    )
-    println("partial_sum expr: ${partialSumExpr}")
-    println("partial_sum simplified: ${intCore.simplifyExpression(partialSumExpr)}")
 
-    let geometricViaPartial = Function<Float64>(
-        "partial_sum",
-        ArrayList<Expression_<Float64>>([
-            Multiply(
-                2.0,
-                HashMap<Expression_<Float64>, Float64>((
-                    Function(
-                        "pow",
-                        ArrayList<Expression_<Float64>>([Constant(3.0), Variable<Float64>("i")])
-                    ),
-                    1.0
-                ),)
-            ),
-            Variable<Float64>("i"),
-            Constant(0.0),
-            Constant(4.0)
-        ])
-    )
-    let geometricDirect = Function<Float64>(
-        "geom_sum",
-        ArrayList<Expression_<Float64>>([
-            Constant(2.0),
-            Constant(3.0),
-            Constant(0.0),
-            Constant(4.0)
-        ])
-    )
-    println("geom via partial_sum: ${floatCore.simplifyExpression(geometricViaPartial)}")
-    println("geom via geom_sum: ${floatCore.simplifyExpression(geometricDirect)}")
+enum Expression_2<A> where A <: Scalar<A> & Comparable<A> & Hashable & ToString & Equatable<A>{
+    | Constant(A)
+    | Variable(String)
+    | Multiply(A, HashMap<Expression_2<A>,A>)
+    | Add(A, HashMap<Expression_2<A>,A>)
+}
+extend<A> Expression_2<A> <: Hashable where A <: Scalar<A> & Comparable<A> & Hashable {
 
-    let sinConst = Function<Float64>("sin", ArrayList<Expression_<Float64>>([Constant(1.0)]))
-    let cosConst = Function<Float64>("cos", ArrayList<Expression_<Float64>>([Constant(3.1415)]))
-    let sinSymbolic = Function<Float64>("sin", ArrayList<Expression_<Float64>>([Variable("x")]))
-
-    println("sin(1) expr: ${sinConst}")
-    println("sin(1) simplified: ${floatCore.simplifyExpression(sinConst)}")
-    println("cos(3.1415) expr: ${cosConst}")
-    println("cos(3.1415) simplified: ${floatCore.simplifyExpression(cosConst)}")
-    println("sin(x) simplified: ${floatCore.simplifyExpression(sinSymbolic)}")
-
-    let benchX = Variable<BigInt>("x")
-    func buildDeep(n: Int64): Expression_<BigInt> {
-        var expr: Expression_<BigInt> = benchX
-        let one = Constant(BigInt(1))
-        let two = Constant(BigInt(2))
-        let x2Term = Multiply(BigInt(3), HashMap<Expression_<BigInt>, BigInt>((benchX, BigInt(2))))
-        
-        for (_ in 0..n) {
-            expr = one + (two * expr) + x2Term
+        public func hashCode(): Int64 {
+            2
+            
+    }
+}
+extend<A> Expression_2<A> <: Equatable<Expression_2<A>> where A <: Scalar<A> & Equatable<A> {
+    public operator func ==(other: Expression_2<A>): Bool {
+        match ((this, other)) {
+            case (Constant(a), Constant(b)) => A.eq(a, b)
+            case (Variable(a), Variable(b)) => a == b
+            case (Add(ac1, m1), Add(ac2, m2)) =>
+                A.eq(ac1, ac2) && m1 == m2
+            case (Multiply(ac1, m1), Multiply(ac2, m2)) =>
+                A.eq(ac1, ac2) && m1 == m2
+            case _ => false
         }
-        return expr
     }
 
+    public operator func !=(other: Expression_2<A>): Bool {
+        !(this == other)
+    }
+}
+main() {
+    var x = HashMap<Expression_2<Int>, Int>((Variable("x"),2),(Multiply(1,HashMap<Expression_2<Int>, Int>((Variable("x"),2))),2))
+    print(x.get(Multiply(1,HashMap<Expression_2<Int>, Int>((Variable("x"),2)))))
+   /*println(11 % 10)
+    let x = (Add(1,HashMap<Expression_<Int>,Int>((Multiply(1, HashMap<Expression_<Int>,Int>((Variable("x"),2))), 1),(Multiply(2, HashMap<Expression_<Int>,Int>()), 1))))
+    let y = (Add(1,HashMap<Expression_<Int>,Int>((Multiply(2, HashMap<Expression_<Int>,Int>()), 1),(Multiply(1, HashMap<Expression_<Int>,Int>((Variable("x"),3))), 1))))
+    println(x.toString())
+    println(x.hashCode())
+    println(y.toString())
+    println(y.hashCode())
+    let z = HashMap<Expression_<Int>,Int>((Variable("x"),2))
+    z.add(Variable("x"),3)
+    println(z.toString())
+
+    let expression = (
+        Add(1,
+            HashMap<Expression_<Int>,Int>(
+                (Multiply(1, HashMap<Expression_<Int>,Int>()), 1),
+                (Multiply(2, HashMap<Expression_<Int>,Int>((Variable("x"),3))), 1),
+                (Add(2, HashMap<Expression_<Int>,Int>(
+                    (Variable("x"),3),
+                    (Add(2, HashMap<Expression_<Int>,Int>((Variable("x"),3))), 2)
+                    
+                    )), 1)
+            )
+            
+        )
+    )
+    //println(expression.toNormalForm().toString())
+    //println(expression.hashCode())
+    var expression2 = expression
+        // expression + expression.toNormalForm() + Add(0,HashMap<Expression_<Int>,Int>((Variable("x"),3)))+ Constant(1) + Variable("x") + Variable("x") + Multiply(1, HashMap<Expression_<Int>,Int>()) + Multiply(1, HashMap<Expression_<Int>,Int>())
+    //)
+    expression2 =
+        Variable<Int>("y") +
+        Multiply(2, HashMap<Expression_<Int>,Int>((Multiply(1,HashMap<Expression_<Int>,Int>((Variable("x"),2))),1),))
+    let x = Variable<Int>("x")
+
+    func buildDeep(n: Int): Expression_<Int> {
+        var expr: Expression_<Int> = x
+
+        for(i in 0..n) {
+            expr = Add(1, HashMap<Expression_<Int>,Int>(
+                (expr, 2),
+                (Multiply(1, HashMap<Expression_<Int>,Int>((x,2))), 3)
+            ))
+        }
+
+        return expr
+    }
+    println(expression2.toNormalForm().derivative(Variable("x")))
+    
     let start = MonoTime.now()
-    var deepExpr = buildDeep(5000)
-    deepExpr = bigIntCore.simplifyExpression(deepExpr)
+    expression2 = buildDeep(61)
+    println(expression2.derivative(Variable("x")).toNormalForm())
     let end = MonoTime.now()
     let duration = end - start
-    println("deep simplify result: ${deepExpr}")
-    println("time test duration: ${duration}")
+    println("Time (ms): ${duration}")
+    
+ */
 
-    let bigInt1 = BigInt(-3)
-    let bitLen1 = bigInt1.bitLen
-    println(bitLen1)
 
-    let bigInt2 = BigInt(-1)
-    let bitLen2 = bigInt2.bitLen
-    println(bitLen2)
-
-    let bigInt3 = BigInt(0)
-    let bitLen3 = bigInt3.bitLen
-    println(bitLen3)
-
-    let huge = BigInt.powInt(BigInt(2), 1000) - BigInt(1)
-    let addStart = MonoTime.now()
-    let hugeSum = huge + huge
-    let addEnd = MonoTime.now()
-    println(hugeSum)
-    println("bigint add time: ${addEnd - addStart}")
-
-    runNestedHashMapEqualRepro()
 }
