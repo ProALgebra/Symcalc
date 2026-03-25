@@ -78,7 +78,7 @@ main() {
     }
 
     let start = MonoTime.now()
-    var deepExpr = buildDeep(600)
+    var deepExpr = buildDeep(5000)
     deepExpr = bigIntCore.simplifyExpression(deepExpr)
     let end = MonoTime.now()
     let duration = end - start
