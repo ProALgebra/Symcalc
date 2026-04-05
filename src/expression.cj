@@ -11,26 +11,146 @@ enum Expression_<A> where A <: Scalar<A> & Comparable<A> & Hashable & ToString &
     | Function(String,ArrayList<Expression_<A>>)
 
     public operator func +(that: Expression_<A>) : Expression_<A> {
-        let x: Expression_<A> = this
-        if(x.hashCode() == that.hashCode()){
-            Add(A.zero(), HashMap<Expression_<A>,A>((this, A.fromInt(2)))).toNormalForm()
-        }else{
-            Add(
-                A.zero(),
-                HashMap<Expression_<A>,A>((this, A.one()), (that, A.one()))
-            ).toNormalForm()
+        let left = this
+        let right = that
+
+        var constantPart = A.zero()
+        var terms = HashMap<Expression_<A>, A>()
+
+        match (left) {
+            case Add(leftConstant, leftTerms) =>
+                constantPart = A.add(constantPart, leftConstant)
+                for ((term, coefficient) in leftTerms) {
+                    match (terms.get(term)) {
+                        case Some(existingCoefficient) =>
+                            let updated = A.add(existingCoefficient, coefficient)
+                            if (A.isZero(updated)) {
+                                terms.remove(term)
+                            } else {
+                                terms.add(term, updated)
+                            }
+                        case None =>
+                            if (!A.isZero(coefficient)) {
+                                terms.add(term, coefficient)
+                            }
+                    }
+                }
+            case _ =>
+                match (terms.get(left)) {
+                    case Some(existingCoefficient) =>
+                        let updated = A.add(existingCoefficient, A.one())
+                        if (A.isZero(updated)) {
+                            terms.remove(left)
+                        } else {
+                            terms.add(left, updated)
+                        }
+                    case None => terms.add(left, A.one())
+                }
         }
+
+        match (right) {
+            case Add(rightConstant, rightTerms) =>
+                constantPart = A.add(constantPart, rightConstant)
+                for ((term, coefficient) in rightTerms) {
+                    match (terms.get(term)) {
+                        case Some(existingCoefficient) =>
+                            let updated = A.add(existingCoefficient, coefficient)
+                            if (A.isZero(updated)) {
+                                terms.remove(term)
+                            } else {
+                                terms.add(term, updated)
+                            }
+                        case None =>
+                            if (!A.isZero(coefficient)) {
+                                terms.add(term, coefficient)
+                            }
+                    }
+                }
+            case _ =>
+                match (terms.get(right)) {
+                    case Some(existingCoefficient) =>
+                        let updated = A.add(existingCoefficient, A.one())
+                        if (A.isZero(updated)) {
+                            terms.remove(right)
+                        } else {
+                            terms.add(right, updated)
+                        }
+                    case None => terms.add(right, A.one())
+                }
+        }
+
+        Add(constantPart, terms).toNormalForm()
     }
     public operator func *(that: Expression_<A>) : Expression_<A> {
-        let x: Expression_<A> = this
-        if(x.hashCode() == that.hashCode()){
-            Multiply(A.one(), HashMap<Expression_<A>,A>((this, A.fromInt(2)))).toNormalForm()
-        }else{
-            Multiply(
-                A.one(),
-                HashMap<Expression_<A>,A>((this, A.one()), (that, A.one()))
-            ).toNormalForm()
+        let left = this
+        let right = that
+
+        var constantPart = A.one()
+        var terms = HashMap<Expression_<A>, A>()
+
+        match (left) {
+            case Multiply(leftConstant, leftTerms) =>
+                constantPart = A.mul(constantPart, leftConstant)
+                for ((term, coefficient) in leftTerms) {
+                    match (terms.get(term)) {
+                        case Some(existingCoefficient) =>
+                            let updated = A.add(existingCoefficient, coefficient)
+                            if (A.isZero(updated)) {
+                                terms.remove(term)
+                            } else {
+                                terms.add(term, updated)
+                            }
+                        case None =>
+                            if (!A.isZero(coefficient)) {
+                                terms.add(term, coefficient)
+                            }
+                    }
+                }
+            case _ =>
+                match (terms.get(left)) {
+                    case Some(existingCoefficient) =>
+                        let updated = A.add(existingCoefficient, A.one())
+                        if (A.isZero(updated)) {
+                            terms.remove(left)
+                        } else {
+                            terms.add(left, updated)
+                        }
+                    case None => terms.add(left, A.one())
+                }
         }
+
+        match (right) {
+            case Multiply(rightConstant, rightTerms) =>
+                constantPart = A.mul(constantPart, rightConstant)
+                for ((term, coefficient) in rightTerms) {
+                    match (terms.get(term)) {
+                        case Some(existingCoefficient) =>
+                            let updated = A.add(existingCoefficient, coefficient)
+                            if (A.isZero(updated)) {
+                                terms.remove(term)
+                            } else {
+                                terms.add(term, updated)
+                            }
+                        case None =>
+                            if (!A.isZero(coefficient)) {
+                                terms.add(term, coefficient)
+                            }
+                    }
+                }
+            case _ =>
+                match (terms.get(right)) {
+                    case Some(existingCoefficient) =>
+                        let updated = A.add(existingCoefficient, A.one())
+                        if (A.isZero(updated)) {
+                            terms.remove(right)
+                        } else {
+                            terms.add(right, updated)
+                        }
+                    case None => terms.add(right, A.one())
+                }
+        }
+
+        Multiply(constantPart, terms).toNormalForm()
     }
 
 
