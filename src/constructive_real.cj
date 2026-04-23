@@ -44,9 +44,79 @@ func crBuild(numerator: BigInt, denominator: BigInt): ConstructiveReal {
     ConstructiveReal.CR(n, d)
 }
 
+func crPow2(bits: Int): BigInt {
+    if (bits <= 0) {
+        BigInt(1)
+    } else {
+        BigInt.powInt(BigInt(2), bits)
+    }
+}
+
+func crFloorDiv(numerator: BigInt, denominator: BigInt): BigInt {
+    var q = numerator / denominator
+    let r = numerator % denominator
+    if (r != BigInt(0) && numerator < BigInt(0)) {
+        q -= BigInt(1)
+    }
+    q
+}
+
+func crCeilDiv(numerator: BigInt, denominator: BigInt): BigInt {
+    var q = numerator / denominator
+    let r = numerator % denominator
+    if (r != BigInt(0) && numerator > BigInt(0)) {
+        q += BigInt(1)
+    }
+    q
+}
+
 extend ConstructiveReal {
     public static func fromFraction(numerator: Int, denominator: Int): ConstructiveReal {
         crBuild(BigInt(numerator), BigInt(denominator))
+    }
+
+    public static func fromBigIntFraction(
+        numerator: BigInt,
+        denominator: BigInt
+    ): ConstructiveReal {
+        crBuild(numerator, denominator)
+    }
+
+    public func approximateDyadic(bits: Int): (BigInt, BigInt) {
+        match (this) {
+            case ConstructiveReal.CR(numerator, denominator) =>
+                let scale = crPow2(bits)
+                let scaled = numerator * scale
+                let low = crFloorDiv(scaled, denominator)
+                let high = crCeilDiv(scaled, denominator)
+                (low, high)
+        }
+    }
+
+    public func toDecimalString(fractionDigits: Int): String {
+        match (this) {
+            case ConstructiveReal.CR(numerator, denominator) =>
+                let isNegative = numerator < BigInt(0)
+                let absNumerator = crAbs(numerator)
+                let integerPart = absNumerator / denominator
+                var remainder = absNumerator % denominator
+
+                var fractionalPart = ""
+                var i = 0
+                while (i < fractionDigits) {
+                    remainder *= BigInt(10)
+                    let digit = remainder / denominator
+                    remainder %= denominator
+                    fractionalPart += "${digit}"
+                    i += 1
+                }
+
+                let sign = if (isNegative) { "-" } else { "" }
+                if (fractionDigits <= 0) {
+                    return "${sign}${integerPart}"
+                }
+                "${sign}${integerPart}.${fractionalPart}"
+        }
     }
 }
 

@@ -119,6 +119,21 @@ public func runRegressionTests(): Bool {
         Add(5, HashMap<Expression_<Int64>, Int64>())
     )
 
+    let arithmeticIntLarge = Function<Int64>(
+        "partial_sum",
+        ArrayList<Expression_<Int64>>([
+            Add(2, HashMap<Expression_<Int64>, Int64>((iInt, 3),)),
+            iInt,
+            Constant(1),
+            Constant(100)
+        ])
+    )
+    allPassed = allPassed && assertExprEqualInt64(
+        "partial_sum arithmetic progression Int64",
+        intCore.simplifyExpression(arithmeticIntLarge),
+        Constant(15350)
+    )
+
     let iFloat = Variable<Float64>("i")
     let geometricViaPartial = Function<Float64>(
         "partial_sum",
@@ -193,6 +208,149 @@ public func runRegressionTests(): Bool {
         Add(0.0, HashMap<Expression_<Float64>, Float64>())
     )
 
+    let geometricNoPowQOne = Function<Float64>(
+        "partial_sum",
+        ArrayList<Expression_<Float64>>([
+            Constant(7.0),
+            iFloat,
+            Constant(3.0),
+            Constant(6.0)
+        ])
+    )
+    allPassed = allPassed && assertExprEqualFloat64(
+        "partial_sum geometric via ratio without pow (q=1)",
+        floatCore.simplifyExpression(geometricNoPowQOne),
+        Constant(28.0)
+    )
+
+    let geometricShiftedExponent = Function<Float64>(
+        "partial_sum",
+        ArrayList<Expression_<Float64>>([
+            Multiply(
+                6.0,
+                HashMap<Expression_<Float64>, Float64>((
+                    Function(
+                        "pow",
+                        ArrayList<Expression_<Float64>>([
+                            Constant(3.0),
+                            Add(
+                                -1.0,
+                                HashMap<Expression_<Float64>, Float64>((iFloat, 1.0),)
+                            )
+                        ])
+                    ),
+                    1.0
+                ),)
+            ),
+            iFloat,
+            Constant(1.0),
+            Constant(4.0)
+        ])
+    )
+    allPassed = allPassed && assertExprEqualFloat64(
+        "partial_sum geometric via ratio with shifted exponent",
+        floatCore.simplifyExpression(geometricShiftedExponent),
+        Constant(240.0)
+    )
+
+    let geometricShiftedQOne = Function<Float64>(
+        "partial_sum",
+        ArrayList<Expression_<Float64>>([
+            Multiply(
+                4.0,
+                HashMap<Expression_<Float64>, Float64>((
+                    Function(
+                        "pow",
+                        ArrayList<Expression_<Float64>>([
+                            Constant(1.0),
+                            Add(
+                                -2.0,
+                                HashMap<Expression_<Float64>, Float64>((iFloat, 1.0),)
+                            )
+                        ])
+                    ),
+                    1.0
+                ),)
+            ),
+            iFloat,
+            Constant(2.0),
+            Constant(5.0)
+        ])
+    )
+    allPassed = allPassed && assertExprEqualFloat64(
+        "partial_sum geometric via ratio with q=1 and shifted exponent",
+        floatCore.simplifyExpression(geometricShiftedQOne),
+        Constant(16.0)
+    )
+
+    let gAtIPlusOne = Function<Float64>(
+        "g",
+        ArrayList<Expression_<Float64>>([
+            Add(1.0, HashMap<Expression_<Float64>, Float64>((iFloat, 1.0),))
+        ])
+    )
+    let gAtI = Function<Float64>("g", ArrayList<Expression_<Float64>>([iFloat]))
+    let telescopingLarge = Function<Float64>(
+        "partial_sum",
+        ArrayList<Expression_<Float64>>([
+            Add(
+                0.0,
+                HashMap<Expression_<Float64>, Float64>((gAtIPlusOne, 1.0), (gAtI, -1.0))
+            ),
+            iFloat,
+            Constant(1.0),
+            Constant(100000.0)
+        ])
+    )
+    let telescopingLargeExpected = Add(
+        0.0,
+        HashMap<Expression_<Float64>, Float64>((
+            Function<Float64>("g", ArrayList<Expression_<Float64>>([Constant(100001.0)])),
+            1.0
+        ), (
+            Function<Float64>("g", ArrayList<Expression_<Float64>>([Constant(1.0)])),
+            -1.0
+        ))
+    )
+    allPassed = allPassed && assertExprEqualFloat64(
+        "partial_sum telescoping g(i+1)-g(i) on large range",
+        floatCore.simplifyExpression(telescopingLarge),
+        telescopingLargeExpected
+    )
+
+    let linearOrder2 = Function<Float64>(
+        "partial_sum",
+        ArrayList<Expression_<Float64>>([
+            Add(2.0, HashMap<Expression_<Float64>, Float64>((iFloat, 3.0),)),
+            iFloat,
+            Constant(1.0),
+            Constant(100.0)
+        ])
+    )
+    allPassed = allPassed && assertExprEqualFloat64(
+        "partial_sum linear recurrence order 2",
+        floatCore.simplifyExpression(linearOrder2),
+        Constant(15350.0)
+    )
+
+    let quadraticOrder3 = Function<Float64>(
+        "partial_sum",
+        ArrayList<Expression_<Float64>>([
+            Multiply(
+                1.0,
+                HashMap<Expression_<Float64>, Float64>((iFloat, 2.0),)
+            ),
+            iFloat,
+            Constant(1.0),
+            Constant(100.0)
+        ])
+    )
+    allPassed = allPassed && assertExprEqualFloat64(
+        "partial_sum linear recurrence order 3",
+        floatCore.simplifyExpression(quadraticOrder3),
+        Constant(338350.0)
+    )
+
     let nonConstBounds = Function<Float64>(
         "partial_sum",
         ArrayList<Expression_<Float64>>([
@@ -211,10 +369,93 @@ public func runRegressionTests(): Bool {
             Constant(4.0)
         ])
     )
+    let nonConstBoundsExpected = Function<Float64>(
+        "geom_sum",
+        ArrayList<Expression_<Float64>>([
+            Constant(2.0),
+            Constant(3.0),
+            Variable<Float64>("n"),
+            Constant(4.0)
+        ])
+    )
     allPassed = allPassed && assertExprEqualFloat64(
-        "partial_sum with non-constant bound stays symbolic",
+        "partial_sum with non-constant bound rewrites to geom_sum",
         floatCore.simplifyExpression(nonConstBounds),
-        nonConstBounds.toNormalForm()
+        nonConstBoundsExpected.toNormalForm()
+    )
+
+    let symbolicSplit = Function<Float64>(
+        "partial_sum",
+        ArrayList<Expression_<Float64>>([
+            Add(
+                3.0,
+                HashMap<Expression_<Float64>, Float64>((
+                    Function(
+                        "pow",
+                        ArrayList<Expression_<Float64>>([Constant(2.0), iFloat])
+                    ),
+                    1.0
+                ), (
+                    Function(
+                        "pow",
+                        ArrayList<Expression_<Float64>>([Constant(5.0), iFloat])
+                    ),
+                    -2.0
+                ))
+            ),
+            iFloat,
+            Variable<Float64>("m"),
+            Variable<Float64>("n")
+        ])
+    )
+    let symbolicSplitExpected = Add(
+        0.0,
+        HashMap<Expression_<Float64>, Float64>((
+            Multiply(
+                3.0,
+                HashMap<Expression_<Float64>, Float64>((
+                    Add(
+                        1.0,
+                        HashMap<Expression_<Float64>, Float64>((
+                            Variable<Float64>("n"),
+                            1.0
+                        ), (
+                            Variable<Float64>("m"),
+                            -1.0
+                        ))
+                    ),
+                    1.0
+                ),)
+            ),
+            1.0
+        ), (
+            Function(
+                "geom_sum",
+                ArrayList<Expression_<Float64>>([
+                    Constant(1.0),
+                    Constant(2.0),
+                    Variable<Float64>("m"),
+                    Variable<Float64>("n")
+                ])
+            ),
+            1.0
+        ), (
+            Function(
+                "geom_sum",
+                ArrayList<Expression_<Float64>>([
+                    Constant(1.0),
+                    Constant(5.0),
+                    Variable<Float64>("m"),
+                    Variable<Float64>("n")
+                ])
+            ),
+            -2.0
+        ))
+    )
+    allPassed = allPassed && assertExprEqualFloat64(
+        "partial_sum split by add with symbolic bounds",
+        floatCore.simplifyExpression(symbolicSplit),
+        symbolicSplitExpected.toNormalForm()
     )
 
     let symbolicGeom = Function<Float64>(

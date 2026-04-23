@@ -30,30 +30,16 @@ where A <: Scalar<A> & Comparable<A> & Hashable & ToString & Equatable<A> {
             case Add(_, terms) =>
                 var result = Add(A.zero(), HashMap<Expression_<A>, A>())
                 for ((t, v) in terms) {
-                    if (t == normalElement) {
-                        result = result + Constant(v)
+                    if (A.isZero(v)) {
                         continue
                     }
-                    match (t) {
-                        case Variable(_) => result = result + Constant(A.zero())
-                        case Multiply(constant, terms) =>
-                            var copyTerms = terms.clone()
-                            match (copyTerms.get(normalElement)) {
-                                case Some(existingCoefficient) =>
-                                    let updated = A.add(existingCoefficient, A.fromInt(-1))
-                                    if (A.isZero(updated)) {
-                                        copyTerms.remove(normalElement)
-                                    } else {
-                                        copyTerms.add(normalElement, updated)
-                                    }
-                                    result = result + Multiply(
-                                        A.mul(constant, existingCoefficient),
-                                        copyTerms
-                                    )
-                                case None => 0
-                            }
-                        case a => a
+                    let dTerm = t.derivativeWithRules(functionRules, normalElement).toNormalForm()
+                    let contribution = if (A.eq(v, A.one())) {
+                        dTerm
+                    } else {
+                        (Constant(v) * dTerm).toNormalForm()
                     }
+                    result = (result + contribution).toNormalForm()
                 }
                 return result.toNormalForm()
             case Multiply(constant, terms) =>

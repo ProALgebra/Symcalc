@@ -110,7 +110,6 @@ extend<A> Expression_<A> <: Hashable where A <: Scalar<A> & Comparable<A> & Hash
             ans
         }
 
-        // Order-independent map hash for commutative expression terms.
         func createHashFromMap<V>(map: HashMap<Expression_<A>, V>): Int64 where V <: Hashable {
             let m = hashModulus()
             var sumHashes: Int64 = 0

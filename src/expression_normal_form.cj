@@ -156,6 +156,21 @@ extend<A> Expression_<A> where A <: Scalar<A> & Comparable<A> {
                     
             }
         }
+        if (normalizedTerms.isEmpty()) {
+            expr = Add(normalizedConstantPart, HashMap<Expression_<A>, A>())
+            return (expr, true)
+        }
+        if (
+            normalizedConstantPart.compare(A.one()) == Ordering.EQ &&
+            normalizedTerms.size == 1
+        ) {
+            for ((singleTerm, singlePower) in normalizedTerms) {
+                if (singlePower.compare(A.one()) == Ordering.EQ) {
+                    expr = singleTerm
+                    return (expr, true)
+                }
+            }
+        }
         expr = Multiply(normalizedConstantPart,normalizedTerms)
         (expr, changed)
     }
@@ -225,7 +240,15 @@ extend<A> Expression_<A> where A <: Scalar<A> & Comparable<A> {
                                                 A.mul(normConst, coefficient)
                                             )
                                         } else {
-                                            let canonicalTerm = Multiply(A.one(), normTerms)
+                                            var canonicalTerm: Expression_<A> = Multiply(A.one(), normTerms)
+                                            if (normTerms.size == 1) {
+                                                for ((singleTerm, singlePower) in normTerms) {
+                                                    if (singlePower.compare(A.one()) == Ordering.EQ) {
+                                                        canonicalTerm = singleTerm
+                                                        addChanged = true
+                                                    }
+                                                }
+                                            }
                                             let delta = A.mul(normConst, coefficient)
                                             if (
                                                 !(

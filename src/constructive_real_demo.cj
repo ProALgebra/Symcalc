@@ -1,14 +1,109 @@
 package symcalc
 import std.collection.*
 import std.time.*
+import std.math.numeric.BigInt
+
+func crAbsValue(value: ConstructiveReal): ConstructiveReal {
+    if (value.compare(ConstructiveReal.zero()) == Ordering.LT) {
+        ConstructiveReal.mul(ConstructiveReal.fromInt(-1), value)
+    } else {
+        value
+    }
+}
+
+func crEpsilonFromDecimalDigits(digits: Int): ConstructiveReal {
+    if (digits <= 0) {
+        return ConstructiveReal.one()
+    }
+    let denominator = BigInt.powInt(BigInt(10), digits)
+    ConstructiveReal.fromBigIntFraction(BigInt(1), denominator)
+}
+
+func sinTaylorAdaptive(
+    x: ConstructiveReal,
+    epsilon: ConstructiveReal,
+    maxTerms: Int
+): ConstructiveReal {
+    var sum = x
+    var term = x
+    let xSquared = ConstructiveReal.mul(x, x)
+    var n = 1
+    while (n < maxTerms) {
+        let denominator = ConstructiveReal.fromInt((2 * n) * (2 * n + 1))
+        term = ConstructiveReal.div(
+            ConstructiveReal.mul(ConstructiveReal.fromInt(-1), ConstructiveReal.mul(term, xSquared)),
+            denominator
+        )
+        sum = ConstructiveReal.add(sum, term)
+        if (crAbsValue(term).compare(epsilon) != Ordering.GT) {
+            break
+        }
+        n += 1
+    }
+    sum
+}
+
+func cosTaylorAdaptive(
+    x: ConstructiveReal,
+    epsilon: ConstructiveReal,
+    maxTerms: Int
+): ConstructiveReal {
+    var sum = ConstructiveReal.one()
+    var term = ConstructiveReal.one()
+    let xSquared = ConstructiveReal.mul(x, x)
+    var n = 1
+    while (n < maxTerms) {
+        let denominator = ConstructiveReal.fromInt((2 * n - 1) * (2 * n))
+        term = ConstructiveReal.div(
+            ConstructiveReal.mul(ConstructiveReal.fromInt(-1), ConstructiveReal.mul(term, xSquared)),
+            denominator
+        )
+        sum = ConstructiveReal.add(sum, term)
+        if (crAbsValue(term).compare(epsilon) != Ordering.GT) {
+            break
+        }
+        n += 1
+    }
+    sum
+}
 
 func makeConstructiveRealRules(): FunctionRules<ConstructiveReal> {
     let rules = FunctionRules<ConstructiveReal>()
+    rules.ensureDefaults()
+
     rules.registerSimplifyRule("pi", { args =>
         if (args.isEmpty()) {
             Function("pi", ArrayList<Expression_<ConstructiveReal>>([]))
         } else {
             Function("pi", args)
+        }
+    })
+
+    rules.registerSimplifyRule("sin", { args =>
+        if (args.size == 1) {
+            let x = args[0].toNormalForm()
+            match (x) {
+                case Constant(value) =>
+                    Constant(sinTaylorAdaptive(value, crEpsilonFromDecimalDigits(45), 300))
+                case _ =>
+                    Function("sin", ArrayList<Expression_<ConstructiveReal>>([x]))
+            }
+        } else {
+            Function("sin", args)
+        }
+    })
+
+    rules.registerSimplifyRule("cos", { args =>
+        if (args.size == 1) {
+            let x = args[0].toNormalForm()
+            match (x) {
+                case Constant(value) =>
+                    Constant(cosTaylorAdaptive(value, crEpsilonFromDecimalDigits(45), 300))
+                case _ =>
+                    Function("cos", ArrayList<Expression_<ConstructiveReal>>([x]))
+            }
+        } else {
+            Function("cos", args)
         }
     })
     rules

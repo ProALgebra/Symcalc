@@ -1,96 +1,124 @@
 package symcalc
-import std.collection.*
 import std.math.numeric.BigInt
+import std.collection.*
 import std.time.*
 
 main() {
-    let testsPassed = runRegressionTests()
-    println("tests passed: ${testsPassed}")
+    let demoX = Variable<Float64>("x")
+    let demoY = Variable<Float64>("y")
+    let demoZ = Variable<Float64>("z")
+    let demoI = Variable<Float64>("i")
+    let demoExpr = Add(
+        1.0,
+        HashMap<Expression_<Float64>, Float64>((
+            Multiply(2.0, HashMap<Expression_<Float64>, Float64>((demoX, 2.0),)),
+            1.0
+        ),)
+    )
+    println("pretty: ${demoExpr.prettyPrint()}")
+    println("latex: ${demoExpr.toLatex()}")
+    println("string: ${demoExpr.toString()}")
 
-    let intCore = Core<Int64>()
-    let bigIntCore = Core<BigInt>()
-    let floatCore = Core<Float64>()
+    let longPoly = Add(
+        7.0,
+        HashMap<Expression_<Float64>, Float64>(
+            (Multiply(3.0, HashMap<Expression_<Float64>, Float64>((demoX, 3.0), (demoY, 2.0))), 1.0),
+            (Multiply(-2.0, HashMap<Expression_<Float64>, Float64>((demoX, 1.0), (demoZ, 2.0))), 1.0),
+            (Multiply(5.0, HashMap<Expression_<Float64>, Float64>((demoY, 4.0),)), 1.0),
+            (Multiply(
+                1.0,
+                HashMap<Expression_<Float64>, Float64>(
+                    (
+                        Add(
+                            1.0,
+                            HashMap<Expression_<Float64>, Float64>(
+                                (Multiply(2.0, HashMap<Expression_<Float64>, Float64>((demoX, 1.0))), 1.0),
+                                (Multiply(1.0, HashMap<Expression_<Float64>, Float64>((demoY, 1.0))), 1.0)
+                            )
+                        ),
+                        2.0
+                    ),
+                    (demoZ, 1.0)
+                )
+            ), 1.0)
+        )
+    )
+    println("long string: ${longPoly.toString()}")
+    println("long pretty: ${longPoly.prettyPrint()}")
+    println("long latex: ${longPoly.toLatex()}")
 
-    let iterator = Variable<Int64>("i")
-    let partialSumExpr = Function<Int64>(
-        "partial_sum",
-        ArrayList<Expression_<Int64>>([
-            Add(2, HashMap<Expression_<Int64>, Int64>((iterator, 1),)),
-            iterator,
-            Constant(1),
-            Constant(4)
+    let demoPowX2 = Function<Float64>(
+        "pow",
+        ArrayList<Expression_<Float64>>([demoX, Constant(2.0)])
+    )
+    let demoSinNested = Function<Float64>(
+        "sin",
+        ArrayList<Expression_<Float64>>([
+            Add(
+                1.0,
+                HashMap<Expression_<Float64>, Float64>(
+                    (demoPowX2, 1.0),
+                    (Function<Float64>("pi", ArrayList<Expression_<Float64>>([])), 1.0)
+                )
+            )
         ])
     )
-    println("partial_sum expr: ${partialSumExpr}")
-    println("partial_sum simplified: ${intCore.simplifyExpression(partialSumExpr)}")
-
-    let geometricViaPartial = Function<Float64>(
+    let demoExpLn = Function<Float64>(
+        "exp",
+        ArrayList<Expression_<Float64>>([
+            Function<Float64>(
+                "ln",
+                ArrayList<Expression_<Float64>>([
+                    Add(
+                        3.0,
+                        HashMap<Expression_<Float64>, Float64>((demoPowX2, 1.0),)
+                    )
+                ])
+            )
+        ])
+    )
+    let demoPartial = Function<Float64>(
         "partial_sum",
         ArrayList<Expression_<Float64>>([
             Multiply(
                 2.0,
                 HashMap<Expression_<Float64>, Float64>((
-                    Function(
+                    Function<Float64>(
                         "pow",
-                        ArrayList<Expression_<Float64>>([Constant(3.0), Variable<Float64>("i")])
+                        ArrayList<Expression_<Float64>>([Constant(3.0), demoI])
                     ),
                     1.0
                 ),)
             ),
-            Variable<Float64>("i"),
+            demoI,
             Constant(0.0),
-            Constant(4.0)
+            Constant(5.0)
         ])
     )
-    let geometricDirect = Function<Float64>(
+    let demoGeom = Function<Float64>(
         "geom_sum",
         ArrayList<Expression_<Float64>>([
+            Function<Float64>("cos", ArrayList<Expression_<Float64>>([demoX])),
             Constant(2.0),
-            Constant(3.0),
-            Constant(0.0),
+            Constant(1.0),
             Constant(4.0)
         ])
     )
-    println("geom via partial_sum: ${floatCore.simplifyExpression(geometricViaPartial)}")
-    println("geom via geom_sum: ${floatCore.simplifyExpression(geometricDirect)}")
 
-    let sinConst = Function<Float64>("sin", ArrayList<Expression_<Float64>>([Constant(1.25)]))
-    let cosConst = Function<Float64>("cos", ArrayList<Expression_<Float64>>([Constant(3.1415)]))
-    let sinSymbolic = Function<Float64>("sin", ArrayList<Expression_<Float64>>([Variable("x")]))
-    let trigX = Variable<Float64>("x")
-    let xSquared = Multiply(
-        1.0,
-        HashMap<Expression_<Float64>, Float64>((trigX, 2.0),)
-    )
-    let sinComposite = Function<Float64>(
-        "sin",
-        ArrayList<Expression_<Float64>>([
-            Add(
-                1.0,
-                HashMap<Expression_<Float64>, Float64>((xSquared, 1.0),)
-            )
-        ])
-    )
-    let sinCompositeDerivativeStart = MonoTime.now()
-    let sinCompositeDerivative = floatCore.derivativeExpression(sinComposite, trigX)
-    let sinCompositeDerivativeEnd = MonoTime.now()
-    let sinCompositeEvaluateStart = MonoTime.now()
-    let sinCompositeAtHalf = floatCore.simplifyExpression(
-        floatCore.substituteVariable(sinComposite, "x", Constant(0.5))
-    )
-    let sinCompositeEvaluateEnd = MonoTime.now()
+    println("pretty nested: ${demoSinNested.prettyPrint()}")
+    println("latex nested: ${demoSinNested.toLatex()}")
+    println("string nested: ${demoSinNested.toString()}")
+    println("pretty exp-ln: ${demoExpLn.prettyPrint()}")
+    println("latex exp-ln: ${demoExpLn.toLatex()}")
+    println("string exp-ln: ${demoExpLn.toString()}")
+    println("pretty partial: ${demoPartial.prettyPrint()}")
+    println("latex partial: ${demoPartial.toLatex()}")
+    println("string partial: ${demoPartial.toString()}")
+    println("pretty geom: ${demoGeom.prettyPrint()}")
+    println("latex geom: ${demoGeom.toLatex()}")
+    println("string geom: ${demoGeom.toString()}")
 
-    println("sin(1) expr: ${sinConst}")
-    println("sin(1) simplified: ${floatCore.simplifyExpression(sinConst)}")
-    println("cos(3.1415) expr: ${cosConst}")
-    println("cos(3.1415) simplified: ${floatCore.simplifyExpression(cosConst)}")
-    println("sin(x) simplified: ${floatCore.simplifyExpression(sinSymbolic)}")
-    println("sin(x^2 + 1) expr: ${sinComposite}")
-    println("d/dx sin(x^2 + 1): ${sinCompositeDerivative}")
-    println("time d/dx sin(x^2 + 1): ${sinCompositeDerivativeEnd - sinCompositeDerivativeStart}")
-    println("sin(x^2 + 1) at x=0.5: ${sinCompositeAtHalf}")
-    println("time evaluate sin(x^2 + 1) at x=0.5: ${sinCompositeEvaluateEnd - sinCompositeEvaluateStart}")
-
+    let bigIntCore = Core<BigInt>()
     let benchX = Variable<BigInt>("x")
     func buildDeep(n: Int64): Expression_<BigInt> {
         var expr: Expression_<BigInt> = benchX
@@ -103,31 +131,33 @@ main() {
         }
         return expr
     }
+/*
+    println("RESULT,depth,avg_duration")
+    var depth = 600
+    while (depth <= 600) {
+        let startFirst = MonoTime.now()
+        var deepExpr = buildDeep(depth)
+        deepExpr = bigIntCore.simplifyExpression(deepExpr)
+        let endFirst = MonoTime.now()
+        var totalDuration = endFirst - startFirst
+        var i = 0
+        for (_ in 0..20) {
+            i += 1
+            let start = MonoTime.now()
+            deepExpr = buildDeep(depth)
+            deepExpr = bigIntCore.simplifyExpression(deepExpr)
+            let end = MonoTime.now()
+            totalDuration += end - start
+        }
 
-    let start = MonoTime.now()
-    var deepExpr = buildDeep(10)
-    deepExpr = bigIntCore.simplifyExpression(deepExpr)
-    let end = MonoTime.now()
-    let duration = end - start
-    println("deep simplify result: ${deepExpr}")
-    println("time test duration: ${duration}")
-
-    let bigInt1 = BigInt(-3)
-    let bitLen1 = bigInt1.bitLen
-    println(bitLen1)
-
-    let bigInt2 = BigInt(-1)
-    let bitLen2 = bigInt2.bitLen
-    println(bitLen2)
-
-    let bigInt3 = BigInt(0)
-    let bitLen3 = bigInt3.bitLen
-    println(bitLen3)
-
-    let huge = BigInt.powInt(BigInt(2), 1000) - BigInt(1)
-    let addStart = MonoTime.now()
-    let hugeSum = huge + huge
-    let addEnd = MonoTime.now()
-    println(hugeSum)
-    println("bigint add time: ${addEnd - addStart}")
+        let averageDuration = totalDuration / i
+        println("RESULT,${depth},${averageDuration}")
+        depth += 5
+    }
+  */  
+    
+    let testsPassed = runRegressionTests()
+    println("tests passed: ${testsPassed}")
+    runPartialSumBenchmarks20()
+    runTrigAndDerivativeGrowthBenchmarks()
 }

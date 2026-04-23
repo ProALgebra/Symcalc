@@ -13,9 +13,19 @@ class Core<A> where A <: Scalar<A> & Comparable<A> & Hashable & ToString & Equat
     }
 
     public func simplifyExpression(expr: Expression_<A>): Expression_<A> {
-        let normalizedExpr = expr.toNormalForm()
-        let simplifiedExpr = this.simplifyNode(normalizedExpr)
-        simplifiedExpr.toNormalForm()
+        let maxIterations = 20
+        var current = expr.toNormalForm()
+        var iteration = 0
+
+        while (iteration < maxIterations) {
+            let next = this.simplifyNode(current).toNormalForm()
+            if (next == current) {
+                return next
+            }
+            current = next
+            iteration += 1
+        }
+        current
     }
 
     public func derivativeExpression(

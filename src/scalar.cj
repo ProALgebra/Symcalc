@@ -2,18 +2,18 @@ package symcalc
 import std.math.numeric.BigInt
 
 public interface Scalar<T> {
-    public static func eq(left: T, right: T): Bool
+    static func eq(left: T, right: T): Bool
 
-    public static func zero(): T
-    public static func one(): T
-    public static func fromInt(n: Int): T
+    static func zero(): T
+    static func one(): T
+    static func fromInt(n: Int): T
 
-    public static func add(left: T, right: T): T
-    public static func mul(left: T, right: T): T
-    public static func div(left: T, right: T): T
-    public static func powInt(base: T, exp: Int): T
+    static func add(left: T, right: T): T
+    static func mul(left: T, right: T): T
+    static func div(left: T, right: T): T
+    static func powInt(base: T, exp: Int): T
     
-    public static func isZero(value: T): Bool {
+    static func isZero(value: T): Bool {
         eq(value, zero())
     }
 }
